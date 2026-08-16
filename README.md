@@ -4,6 +4,20 @@
 
 DSH 后端把工具结果一次性送到页面，这个插件在显示层把它们分段播放出来。文字逐段出现，滚动跟着新内容走，块在开始运行时自动展开，在下一条内容真正出现时才收起。所有效果都在运行时注入，不会修改 DSH 本体。关掉插件，界面就回到 DSH 原来的样子。
 
+## 截图
+
+### Claude 配色界面
+
+![Claude 配色界面](assets/screenshots/1.png)
+
+### DSH 原版配色界面
+
+![DSH 原版配色界面](assets/screenshots/2.png)
+
+### 思考中的动画
+
+![思考中的动画](assets/screenshots/thinking.png)
+
 ## 改了哪些动画
 
 思考和 pwsh、edit、write 工具在运行时会保持四行高的视口。视口用缓动曲线跟随最新内容，底部有透明度渐隐。用户真正向上滚动时自动跟随会暂停，不会和阅读抢控制权。
@@ -67,6 +81,20 @@ lines surface in small chunks, the viewport follows the newest content, and
 disclosure blocks open when they start running and close only when the next
 item actually exists. Everything is injected at runtime. Removing the plugin
 returns DSH to its original behavior.
+
+## Screenshots
+
+### Claude UI
+
+![Claude UI](assets/screenshots/1.png)
+
+### Original DSH UI
+
+![Original DSH UI](assets/screenshots/2.png)
+
+### Thinking animation
+
+![Thinking animation](assets/screenshots/thinking.png)
 
 ## Animation changes
 
