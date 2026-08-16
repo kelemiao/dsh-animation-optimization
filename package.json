@@ -1,0 +1,23 @@
+{
+  "name": "dsh-theme-photo-editorial",
+  "version": "0.1.0",
+  "description": "Photo-abstract-editorial GUI appearance theme for DeepSeek Harness — warm ivory panels, muted ink, mineral accents, editorial serif headings. Appearance only; no functional changes.",
+  "private": true,
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test test/client.test.js"
+  },
+  "dsh": {
+    "client": {
+      "inject": ["@deepseek-ai/dsh-client-runtime"],
+      "platform": "web"
+    }
+  }
+}
