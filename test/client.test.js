@@ -63,7 +63,7 @@ function fakeElement(tag, className = "") {
   };
 }
 
-function loadTheme({ roots = [], tabs = [], flow = null, flows = [] } = {}) {
+function loadTheme({ roots = [], tabs = [], flow = null, flows = [], conversation = [] } = {}) {
   let observer;
   let observerOptions;
   let queryCount = 0;
@@ -93,6 +93,7 @@ function loadTheme({ roots = [], tabs = [], flow = null, flows = [] } = {}) {
     querySelectorAll(selector) {
       queryCount += 1;
       if (selector === ".advisor-flow") return flows.slice();
+      if (selector === ".wSkVaW_scrollBody") return conversation.slice();
       if (selector === ".QWLzlG_root, ._Xvjua_root, .o3BgMG_root, [class*='_markdown_']") {
         return flow ? flow.slice() : roots.slice();
       }
@@ -227,6 +228,14 @@ test("keeps the long Advisor review flow following the newest content", async ()
   assert.equal(advisorFlow.scrollTop, 404);
 });
 
+test("keeps the main conversation scroller following streaming output", async () => {
+  const scroller = { scrollTop: 0, scrollHeight: 500, clientHeight: 96 };
+  const theme = loadTheme({ conversation: [scroller] });
+  theme.fire();
+  await eventually(() => scroller.scrollTop >= 403.999);
+  assert.equal(scroller.scrollTop, 404);
+});
+
 test("package manifest follows DSH official plugin conventions", () => {
   assert.equal(pkg.name, "dsh-animation-optimization");
   assert.equal(pkg.dsh.client.platform, "web");
@@ -251,6 +260,10 @@ test("ships DSH Settings rows for logo, colors and fonts plus split CSS layers",
   assert.match(source, /data-dsh-font/);
   assert.match(source, /data-dsh-animation-optimization-colors/);
   assert.match(source, /data-dsh-animation-optimization-fonts/);
+  // Original DSH color mode must leave native controls untouched.
+  assert.match(source, /body:not\(\[data-dsh-colors=off\]\) \.uV2eYG_primary/);
+  assert.match(source, /var\(--dsw-alias-button-primary-fill\)/);
+  assert.match(source, /var\(--dsw-alias-label-primary-inverted\)/);
   // v27: the duplicate small starburst beside the Think label is gone.
   assert.doesNotMatch(source, /\.QWLzlG_root\[data-state=running\] \.QWLzlG_leading::before/);
 });
@@ -341,7 +354,7 @@ test("coalesces a burst of DOM mutations into one page synchronization", async (
   const theme = loadTheme();
   for (let index = 0; index < 100; index += 1) theme.fire();
   await sleep(25);
-  assert.equal(theme.queryCount, 5);
+  assert.equal(theme.queryCount, 6);
 });
 
 test("does not click the same unsettled disclosure more than once", async () => {
