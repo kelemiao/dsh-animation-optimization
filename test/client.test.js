@@ -4,6 +4,7 @@ import test from "node:test";
 import vm from "node:vm";
 
 const source = await readFile(new URL("../lib/client.js", import.meta.url), "utf8");
+const pkg = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function eventually(read, timeout = 900) {
@@ -86,7 +87,7 @@ function loadTheme({ roots = [], tabs = [], flow = null } = {}) {
       return { nextNode() { return null; } };
     },
     querySelector(selector) {
-      return selector === "style[data-dsh-theme-photo-editorial]" ? null : null;
+      return selector === "style[data-dsh-animation-optimization]" ? null : null;
     },
     querySelectorAll(selector) {
       queryCount += 1;
@@ -196,6 +197,16 @@ test("hides only the Advisor floating capsule, keeps the header toggle, and hide
   assert.match(source, /scrollbar-width: none/);
 });
 
+test("package manifest follows DSH official plugin conventions", () => {
+  assert.equal(pkg.name, "dsh-animation-optimization");
+  assert.equal(pkg.dsh.client.platform, "web");
+  assert.deepEqual(pkg.dsh.client.inject, ["@deepseek-ai/dsh-client-runtime"]);
+  assert.ok(pkg.keywords.includes("theme"));
+  assert.ok(pkg.keywords.includes("appearance"));
+  assert.ok(pkg.keywords.includes("animation"));
+  assert.match(pkg.repository.url, /github\.com\/kelemiao\/dsh-animation-optimization/);
+});
+
 test("ships DSH Settings rows for logo, colors and fonts plus split CSS layers", () => {
   assert.match(source, /settings\.general\.item/);
   assert.match(source, /settings\.section/);
@@ -207,8 +218,8 @@ test("ships DSH Settings rows for logo, colors and fonts plus split CSS layers",
   assert.match(source, /var FONT_CSS = \[/);
   assert.match(source, /data-dsh-colors/);
   assert.match(source, /data-dsh-font/);
-  assert.match(source, /data-dsh-theme-photo-editorial-colors/);
-  assert.match(source, /data-dsh-theme-photo-editorial-fonts/);
+  assert.match(source, /data-dsh-animation-optimization-colors/);
+  assert.match(source, /data-dsh-animation-optimization-fonts/);
   // v27: the duplicate small starburst beside the Think label is gone.
   assert.doesNotMatch(source, /\.QWLzlG_root\[data-state=running\] \.QWLzlG_leading::before/);
 });

@@ -1,7 +1,7 @@
 {
-  "name": "dsh-theme-photo-editorial",
-  "version": "0.1.0",
-  "description": "Photo-abstract-editorial GUI appearance theme for DeepSeek Harness — warm ivory panels, muted ink, mineral accents, editorial serif headings. Appearance only; no functional changes.",
+  "name": "dsh-animation-optimization",
+  "version": "0.2.0",
+  "description": "DSH 动画优化：输出流式动画与 Claude Code 风格外观插件",
   "private": true,
   "type": "module",
   "main": "lib/index.js",
@@ -9,6 +9,23 @@
     ".": "./lib/index.js",
     "./client": "./lib/client.js",
     "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/client.js"
+  ],
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "theme",
+    "appearance",
+    "animation",
+    "claude-code",
+    "plugin"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kelemiao/dsh-animation-optimization.git"
   },
   "license": "MIT",
   "scripts": {
