@@ -2,7 +2,9 @@
   "name": "dsh-animation-optimization",
   "version": "0.2.0",
   "description": "DSH 动画优化：输出流式动画与 Claude Code 风格外观插件",
-  "private": true,
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "main": "lib/index.js",
   "exports": {
@@ -32,10 +34,16 @@
   "scripts": {
     "test": "node --test test/client.test.js"
   },
+  "peerDependencies": {
+    "react": "^18.2.0",
+    "@deepseek-ai/dsh-client-runtime": "^0.1.0-rc.6",
+    "@deepseek-ai/cordis": "^4.0.1"
+  },
   "dsh": {
     "client": {
       "inject": ["@deepseek-ai/dsh-client-runtime"],
-      "platform": "web"
+      "platform": "web",
+      "immediately": true
     }
   }
 }

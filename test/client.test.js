@@ -239,7 +239,12 @@ test("keeps the main conversation scroller following streaming output", async ()
 test("package manifest follows DSH official plugin conventions", () => {
   assert.equal(pkg.name, "dsh-animation-optimization");
   assert.equal(pkg.dsh.client.platform, "web");
+  assert.equal(pkg.dsh.client.immediately, true);
   assert.deepEqual(pkg.dsh.client.inject, ["@deepseek-ai/dsh-client-runtime"]);
+  assert.equal(pkg.peerDependencies.react, "^18.2.0");
+  assert.ok(pkg.peerDependencies["@deepseek-ai/dsh-client-runtime"]);
+  assert.ok(pkg.peerDependencies["@deepseek-ai/cordis"]);
+  assert.equal(pkg.publishConfig.access, "public");
   assert.ok(pkg.keywords.includes("theme"));
   assert.ok(pkg.keywords.includes("appearance"));
   assert.ok(pkg.keywords.includes("animation"));
