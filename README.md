@@ -18,6 +18,8 @@ DSH 后端把工具结果一次性送到页面，这个插件在显示层把它�
 
 暖米色底、墨色文字和黏土色强调色来自颜色 token 层。标题、路径和引用使用衬线字体，来自字体层。Claude 星爆头像和思考指示器由 logo 层控制。三个层互相独立，可以只保留 Claude 字体而用 DSH 原版配色，反过来也可以。
 
+插件默认开启完整 Claude 全套：配色、字体、logo 都是开着的。如果只想要动画优化、不想要外观改动，在设置里关闭 Claude 配色和 Claude 字体即可，展开收起、流式输出、自动跟随这些行为层动画不受影响，界面会回到 DSH 原版外观。
+
 ## 安装
 
 ```sh
@@ -95,6 +97,12 @@ layer. Headings, paths, and quotes use the serif font layer. The Claude
 starburst avatar and streaming indicator come from the logo layer. The layers
 are independent: Claude fonts can be combined with the original DSH palette
 and the other way around.
+
+The full Claude set is enabled by default: colors, fonts, and logo all start
+on. To keep only the animation optimization and drop the restyling, turn off
+Claude Colors and Claude Font in settings. The behavior layer — disclosure
+timing, streaming reveal, and auto-follow — keeps running, and the UI returns
+to the original DSH appearance.
 
 ## Install
 

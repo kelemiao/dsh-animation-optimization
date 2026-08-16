@@ -24,6 +24,7 @@ function textNode(value) {
 function fakeElement(tag, className = "") {
   return {
     tagName: tag,
+    nodeType: 1,
     className,
     children: [],
     attributes: {},
@@ -62,7 +63,7 @@ function fakeElement(tag, className = "") {
   };
 }
 
-function loadTheme({ roots = [], tabs = [], flow = null } = {}) {
+function loadTheme({ roots = [], tabs = [], flow = null, flows = [] } = {}) {
   let observer;
   let observerOptions;
   let queryCount = 0;
@@ -91,6 +92,7 @@ function loadTheme({ roots = [], tabs = [], flow = null } = {}) {
     },
     querySelectorAll(selector) {
       queryCount += 1;
+      if (selector === ".advisor-flow") return flows.slice();
       if (selector === ".QWLzlG_root, ._Xvjua_root, .o3BgMG_root, [class*='_markdown_']") {
         return flow ? flow.slice() : roots.slice();
       }
@@ -191,10 +193,38 @@ test("collapses blank runs at display time only for nodes that just arrived or c
   assert.equal(inserted.nodeValue, "x\ny");
 });
 
+test("never rewrites blank lines inside tool bodies (terminal, diff, read)", () => {
+  const theme = loadTheme();
+  const terminal = fakeElement("div", "o3BgMG_terminalBody");
+  const code = textNode("line1\n\n\nline2");
+  code.parentElement = terminal;
+  terminal.appendChild(code);
+  theme.fire([{ type: "childList", addedNodes: [terminal] }]);
+  assert.equal(code.nodeValue, "line1\n\n\nline2");
+
+  const diffLine = textNode("a\n\nb");
+  const diffLineEl = fakeElement("div", "_line_srovd_44");
+  const diffBody = fakeElement("div", "o3BgMG_diffBody");
+  diffLine.parentElement = diffLineEl;
+  diffLineEl.parentElement = diffBody;
+  theme.fire([{ type: "characterData", target: diffLine }]);
+  assert.equal(diffLine.nodeValue, "a\n\nb");
+});
+
 test("hides only the Advisor floating capsule, keeps the header toggle, and hides thinking scrollbars", () => {
   assert.match(source, /\.advisor-capsule \{ display: none/);
   assert.doesNotMatch(source, /\.advisor-header-toggle \{ display: none/);
+  assert.match(source, /\.advisor-header-toggle \{/);
+  assert.match(source, /height: 32px !important/);
+  assert.match(source, /\.advisor-panel \{ display: flex !important/);
   assert.match(source, /scrollbar-width: none/);
+});
+
+test("keeps the long Advisor review flow following the newest content", async () => {
+  const advisorFlow = { scrollTop: 0, scrollHeight: 500, clientHeight: 96 };
+  loadTheme({ flows: [advisorFlow] });
+  await eventually(() => advisorFlow.scrollTop >= 403.999);
+  assert.equal(advisorFlow.scrollTop, 404);
 });
 
 test("package manifest follows DSH official plugin conventions", () => {
@@ -204,6 +234,7 @@ test("package manifest follows DSH official plugin conventions", () => {
   assert.ok(pkg.keywords.includes("theme"));
   assert.ok(pkg.keywords.includes("appearance"));
   assert.ok(pkg.keywords.includes("animation"));
+  assert.ok(pkg.keywords.includes("vibe-coding"));
   assert.match(pkg.repository.url, /github\.com\/kelemiao\/dsh-animation-optimization/);
 });
 
@@ -310,7 +341,7 @@ test("coalesces a burst of DOM mutations into one page synchronization", async (
   const theme = loadTheme();
   for (let index = 0; index < 100; index += 1) theme.fire();
   await sleep(25);
-  assert.equal(theme.queryCount, 4);
+  assert.equal(theme.queryCount, 5);
 });
 
 test("does not click the same unsettled disclosure more than once", async () => {
