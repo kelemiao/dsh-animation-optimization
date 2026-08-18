@@ -10,11 +10,13 @@
   "exports": {
     ".": "./lib/index.js",
     "./client": "./lib/client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
     "./package.json": "./package.json"
   },
   "files": [
     "lib/index.js",
-    "lib/client.js"
+    "lib/client.js",
+    "cordis.patch.yml"
   ],
   "keywords": [
     "dsh",
@@ -40,6 +42,9 @@
     "@deepseek-ai/cordis": "^4.0.1"
   },
   "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
     "client": {
       "inject": ["@deepseek-ai/dsh-client-runtime"],
       "platform": "web",

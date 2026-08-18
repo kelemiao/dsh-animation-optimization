@@ -40,15 +40,9 @@ DSH 后端把工具结果一次性送到页面，这个插件在显示层把它�
 dsh plugin --profile web add link:C:/path/to/dsh-animation-optimization
 ```
 
-在 `~/.dsh/profiles/web/cordis.patch.yml` 里注册：
+插件声明了 `dsh.bundle.patch`，`dsh plugin` 装好后会自动把它加入 `dsh.profile.bundles`，不需要手动改 `cordis.patch.yml`。
 
-```yaml
-- insert:
-    - id: dsh-animation-optimization
-      name: dsh-animation-optimization
-```
-
-重启 `dsh web`，浏览器强制刷新一次。如果你之前安装的是旧名字 `dsh-theme-photo-editorial`，把上面两处 id 和 name 改成新名字即可。
+重启 `dsh web`，浏览器强制刷新一次。如果之前手动注册过 `dsh-theme-photo-editorial` 或 `dsh-animation-optimization` 的 insert 行，先把它从 `~/.dsh/profiles/web/cordis.patch.yml` 里删掉，避免同一插件挂载两次。
 
 ## 设置
 
@@ -138,16 +132,14 @@ to the original DSH appearance.
 dsh plugin --profile web add link:C:/path/to/dsh-animation-optimization
 ```
 
-Register it in `~/.dsh/profiles/web/cordis.patch.yml`:
+The package declares `dsh.bundle.patch`, so `dsh plugin` adds it to
+`dsh.profile.bundles` automatically. No manual `cordis.patch.yml` edit is
+needed.
 
-```yaml
-- insert:
-    - id: dsh-animation-optimization
-      name: dsh-animation-optimization
-```
-
-Restart `dsh web` and hard-refresh the browser. If you installed the old name
-`dsh-theme-photo-editorial`, replace both id and name with the new one.
+Restart `dsh web` and hard-refresh the browser. If you previously registered
+`dsh-theme-photo-editorial` or `dsh-animation-optimization` manually with an
+insert row, remove it from `~/.dsh/profiles/web/cordis.patch.yml` first so
+the plugin does not mount twice.
 
 ## Settings
 
