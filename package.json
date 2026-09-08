@@ -1,6 +1,6 @@
 {
   "name": "dsh-animation-optimization",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "DSH 动画优化：输出流式动画与 Claude Code 风格外观插件",
   "publishConfig": {
     "access": "public"

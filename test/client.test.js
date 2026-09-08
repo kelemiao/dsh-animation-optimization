@@ -94,11 +94,13 @@ function loadTheme({ roots = [], tabs = [], flow = null, flows = [], conversatio
       queryCount += 1;
       if (selector === ".advisor-flow") return flows.slice();
       if (selector === ".wSkVaW_scrollBody") return conversation.slice();
-      if (selector === ".QWLzlG_root, ._Xvjua_root, .o3BgMG_root, [class*='_markdown_']") {
+      if (selector === ".QWLzlG_root, .lcKema_root, ._Xvjua_root, ._5OnbHa_root, .o3BgMG_root, [class*='_markdown_']") {
         return flow ? flow.slice() : roots.slice();
       }
-      if (selector === ".QWLzlG_root") return roots.filter((root) => root.kind !== "file" && root.kind !== "xvjua");
+      if (selector === ".QWLzlG_root") return roots.filter((root) => root.kind === "think");
+      if (selector === ".lcKema_root") return roots.filter((root) => root.kind === "think2");
       if (selector === "._Xvjua_root") return roots.filter((root) => root.kind === "xvjua");
+      if (selector === "._5OnbHa_root") return roots.filter((root) => root.kind === "cmd2");
       if (selector === ".o3BgMG_root") return roots.filter((root) => root.kind === "file");
       if (selector === ".wSkVaW_tab") return tabs;
       return [];
@@ -166,8 +168,8 @@ function makeRoot({ kind = "think", state = "ok", stateRef = null, body = null, 
       return name === "data-state" ? (stateRef ? stateRef.value : state) : null;
     },
     querySelector(selector) {
-      const rowSelector = kind === "file" ? ".o3BgMG_row" : kind === "xvjua" ? "._Xvjua_row" : ".QWLzlG_row";
-      const bodySelector = kind === "file" ? ".o3BgMG_bodyWrap" : kind === "xvjua" ? "._Xvjua_body" : ".QWLzlG_thinkBody";
+      const rowSelector = kind === "file" ? ".o3BgMG_row" : kind === "xvjua" ? "._Xvjua_row" : kind === "cmd2" ? "._5OnbHa_row" : kind === "think2" ? ".lcKema_row" : ".QWLzlG_row";
+      const bodySelector = kind === "file" ? ".o3BgMG_bodyWrap" : kind === "xvjua" ? "._Xvjua_body" : kind === "cmd2" ? "._5OnbHa_body" : kind === "think2" ? ".lcKema_thinkBody" : ".QWLzlG_thinkBody";
       if (selector === rowSelector) return row;
       if (selector === bodySelector) return root.body;
       return null;
@@ -175,7 +177,7 @@ function makeRoot({ kind = "think", state = "ok", stateRef = null, body = null, 
     querySelectorAll(selector) {
       const scrollSelector = kind === "file"
         ? ".o3BgMG_readBody ._body_biesw_72, .o3BgMG_diffBody ._body_srovd_36"
-        : kind === "xvjua" ? "._Xvjua_body" : ".QWLzlG_thinkBody";
+        : kind === "xvjua" ? "._Xvjua_body" : kind === "cmd2" ? "._5OnbHa_body" : kind === "think2" ? ".lcKema_thinkBody" : ".QWLzlG_thinkBody";
       if (root.body && selector === scrollSelector) return [root.body];
       return [];
     },
@@ -269,6 +271,15 @@ test("ships DSH Settings rows for logo, colors and fonts plus split CSS layers",
   assert.match(source, /body:not\(\[data-dsh-colors=off\]\) \.uV2eYG_primary/);
   assert.match(source, /var\(--dsw-alias-button-primary-fill\)/);
   assert.match(source, /var\(--dsw-alias-label-primary-inverted\)/);
+  // v31: dual-version selectors — dsh 0.1.2 renamed think/command/turn-status
+  // classes; old selectors stay for dsh <= 0.1.0.
+  assert.match(source, /\.lcKema_root\[data-state=running\] \.lcKema_thinkBody/);
+  assert.match(source, /\._5OnbHa_root\[data-state=running\] \._5OnbHa_body/);
+  assert.match(source, /\.lcKema_thinkBody/);
+  assert.match(source, /\._5OnbHa_body/);
+  assert.match(source, /\.EvIC1a_turnStatus \{/);
+  assert.match(source, /\.EvIC1a_turnStatus::before/);
+  assert.match(source, /\.EvIC1a_column/);
   // v27: the duplicate small starburst beside the Think label is gone.
   assert.doesNotMatch(source, /\.QWLzlG_root\[data-state=running\] \.QWLzlG_leading::before/);
 });
@@ -359,7 +370,7 @@ test("coalesces a burst of DOM mutations into one page synchronization", async (
   const theme = loadTheme();
   for (let index = 0; index < 100; index += 1) theme.fire();
   await sleep(25);
-  assert.equal(theme.queryCount, 6);
+  assert.equal(theme.queryCount, 8); // v31: 5 disclosure entries + advisor + conversation + tabs
 });
 
 test("does not click the same unsettled disclosure more than once", async () => {
@@ -597,4 +608,45 @@ test("auto-scrolls a running thinking body to the bottom with a non-linear tween
   theme.fire();
   await eventually(() => body.scrollTop >= 703.999);
   assert.equal(body.scrollTop, 704); // near bottom: follow the stream again
+});
+
+test("auto-opens a running think disclosure on the dsh 0.1.2 selectors (lcKema)", async () => {
+  let clicks = 0;
+  const row = { click() { clicks += 1; } };
+  const root = makeRoot({ kind: "think2", state: "running", row });
+  const theme = loadTheme({ roots: [root] });
+  assert.equal(clicks, 1);
+  theme.fire();
+  await sleep(25);
+  assert.equal(clicks, 1);
+});
+
+test("collapses a 0.1.2 command disclosure (_5OnbHa) only after the next item mounts", async () => {
+  let clicks = 0;
+  const row = { click() { clicks += 1; } };
+  const stateRef = { value: "running" };
+  const body = fakeElement("div");
+  body.scrollTop = 0;
+  body.scrollHeight = 500;
+  body.clientHeight = 96;
+  const root = makeRoot({ kind: "cmd2", stateRef, row });
+  const theme = loadTheme({ roots: [root] });
+  assert.equal(clicks, 1); // auto-open while running
+
+  root.body = body;
+  theme.fire();
+  await sleep(25);
+  assert.equal(clicks, 1);
+
+  stateRef.value = "ok";
+  theme.fire();
+  await sleep(80);
+  assert.equal(body.getAttribute("data-dsh-collapsing"), null); // waits for next item
+
+  root.nextElementSibling = { nodeType: 1, className: "_markdown_test", textContent: "next" };
+  theme.fire();
+  await sleep(30);
+  assert.equal(body.getAttribute("data-dsh-collapsing"), "1"); // animated out first
+  await eventually(() => clicks === 2, 2500);
+  assert.equal(clicks, 2); // then the row is toggled closed
 });
