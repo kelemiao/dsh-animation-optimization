@@ -63,7 +63,7 @@ function fakeElement(tag, className = "") {
   };
 }
 
-function loadTheme({ roots = [], tabs = [], flow = null, flows = [], conversation = [] } = {}) {
+function loadTheme({ roots = [], tabs = [], flow = null, flows = [], conversation = [], runtime = "old" } = {}) {
   let observer;
   let observerOptions;
   let queryCount = 0;
@@ -123,7 +123,21 @@ function loadTheme({ roots = [], tabs = [], flow = null, flows = [], conversatio
               },
             };
           }
+          if (id === "@deepseek-ai/dsh-client-store") {
+            // v32: new hosts (>= 0.1.2) serve the settings store here; old
+            // hosts miss the module table (synchronous throw), like the real one.
+            if (runtime === "old" || runtime === "none") throw new Error("missed the module table");
+            return {
+              defineStore(definition) {
+                return {
+                  getState() { return definition.init(); },
+                  actions: definition.actions,
+                };
+              },
+            };
+          }
           if (id === "@deepseek-ai/dsh-client-runtime/client") {
+            if (runtime === "new" || runtime === "none") throw new Error("missed the module table");
             return {
               defineStore(definition) {
                 return {
@@ -277,6 +291,9 @@ test("ships DSH Settings rows for logo, colors and fonts plus split CSS layers",
   assert.match(source, /\._5OnbHa_root\[data-state=running\] \._5OnbHa_body/);
   assert.match(source, /\.lcKema_thinkBody/);
   assert.match(source, /\._5OnbHa_body/);
+  // v32: tolerant runtime require — new specifier first, old as fallback.
+  assert.match(source, /@deepseek-ai\/dsh-client-store/);
+  assert.match(source, /@deepseek-ai\/dsh-client-runtime\/client/);
   assert.match(source, /\.EvIC1a_turnStatus \{/);
   assert.match(source, /\.EvIC1a_turnStatus::before/);
   assert.match(source, /\.EvIC1a_column/);
@@ -649,4 +666,26 @@ test("collapses a 0.1.2 command disclosure (_5OnbHa) only after the next item mo
   assert.equal(body.getAttribute("data-dsh-collapsing"), "1"); // animated out first
   await eventually(() => clicks === 2, 2500);
   assert.equal(clicks, 2); // then the row is toggled closed
+});
+
+test("uses the new settings store on dsh 0.1.2 without breaking animations", async () => {
+  let clicks = 0;
+  const row = { click() { clicks += 1; } };
+  const root = makeRoot({ kind: "think2", state: "running", row });
+  const theme = loadTheme({ roots: [root], runtime: "new" });
+  assert.equal(clicks, 1);
+  theme.fire();
+  await sleep(25);
+  assert.equal(clicks, 1);
+});
+
+test("runs store-less when neither runtime module exists", async () => {
+  let clicks = 0;
+  const row = { click() { clicks += 1; } };
+  const root = makeRoot({ kind: "think2", state: "running", row });
+  const theme = loadTheme({ roots: [root], runtime: "none" });
+  assert.equal(clicks, 1); // behavior layer works; only Settings rows stay off
+  theme.fire();
+  await sleep(25);
+  assert.equal(clicks, 1);
 });

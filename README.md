@@ -52,7 +52,7 @@ Claude Logo 控制星爆头像和流式指示器。Claude 配色在编辑风格�
 
 ## 结构与测试
 
-宿主侧 `lib/index.js` 是无逻辑的 cordis 入口。客户端 `lib/client.js` 是单个无构建步骤的 bundle，运行时注入三层样式（行为、颜色 token、字体），并通过 MutationObserver 驱动展开收起状态机。v31 起同时兼容 DSH 0.1.0（`QWLzlG/_Xvjua`）与 0.1.2（`lcKema/_5OnbHa/EvIC1a`）两套选择器。测试在 `test/client.test.js`，用 VM 假 DOM 运行，不需要浏览器。
+宿主侧 `lib/index.js` 是无逻辑的 cordis 入口。客户端 `lib/client.js` 是单个无构建步骤的 bundle，运行时注入三层样式（行为、颜色 token、字体），并通过 MutationObserver 驱动展开收起状态机。v31 起同时兼容 DSH 0.1.0（`QWLzlG/_Xvjua`）与 0.1.2（`lcKema/_5OnbHa/EvIC1a`）两套选择器；v32 起 settings store 改用容错 require（新版 `@deepseek-ai/dsh-client-store` 优先，老版 `dsh-client-runtime/client` 兜底）。测试在 `test/client.test.js`，用 VM 假 DOM 运行，不需要浏览器。
 
 ```sh
 npm test
@@ -156,7 +156,9 @@ localStorage and apply instantly.
 build-free bundle that injects three stylesheet layers (behavior, color
 tokens, fonts) and drives the disclosure state machine through a
 MutationObserver. Since v31 it supports both DSH 0.1.0 (`QWLzlG/_Xvjua`)
-and 0.1.2 (`lcKema/_5OnbHa/EvIC1a`) selector sets. Tests in `test/client.test.js` run against a VM fake DOM.
+and 0.1.2 (`lcKema/_5OnbHa/EvIC1a`) selector sets; since v32 the settings
+store require tolerates both runtimes (new `@deepseek-ai/dsh-client-store`
+first, old `dsh-client-runtime/client` as fallback). Tests in `test/client.test.js` run against a VM fake DOM.
 
 ```sh
 npm test
