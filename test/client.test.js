@@ -256,9 +256,18 @@ test("package manifest follows DSH official plugin conventions", () => {
   assert.equal(pkg.name, "dsh-animation-optimization");
   assert.equal(pkg.dsh.client.platform, "web");
   assert.equal(pkg.dsh.client.immediately, true);
-  assert.deepEqual(pkg.dsh.client.inject, ["@deepseek-ai/dsh-client-runtime"]);
-  assert.equal(pkg.peerDependencies.react, "^18.2.0");
-  assert.ok(pkg.peerDependencies["@deepseek-ai/dsh-client-runtime"]);
+  // dsh 0.2.0 split the client runtime: the settings store is the static-table
+  // module `@deepseek-ai/dsh-client-store` — the name every official client
+  // package requires — and `@deepseek-ai/dsh-client-runtime` no longer exists.
+  assert.deepEqual(pkg.dsh.client.inject, ["@deepseek-ai/dsh-client-store"]);
+  // The host compatibility gate compares every @deepseek-ai/dsh* peer RANGE
+  // against its own runtime version (semver.satisfies(runtime, range)), so the
+  // declared range must admit the runtimes this plugin supports: 0.1.2 (kept
+  // code paths) through the 0.2 line (current).
+  assert.equal(pkg.peerDependencies["@deepseek-ai/dsh-client-store"], ">=0.1.2-rc.1 <0.3.0");
+  assert.equal(pkg.peerDependencies["@deepseek-ai/dsh-client-runtime"], undefined);
+  // react rides the host static module table; official client packages declare none.
+  assert.equal(pkg.peerDependencies.react, undefined);
   assert.ok(pkg.peerDependencies["@deepseek-ai/cordis"]);
   assert.equal(pkg.publishConfig.access, "public");
   assert.ok(pkg.keywords.includes("theme"));

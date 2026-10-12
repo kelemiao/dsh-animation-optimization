@@ -52,7 +52,9 @@ Claude Logo 控制星爆头像和流式指示器。Claude 配色在编辑风格�
 
 ## 结构与测试
 
-宿主侧 `lib/index.js` 是无逻辑的 cordis 入口。客户端 `lib/client.js` 是单个无构建步骤的 bundle，运行时注入三层样式（行为、颜色 token、字体），并通过 MutationObserver 驱动展开收起状态机。v31 起同时兼容 DSH 0.1.0（`QWLzlG/_Xvjua`）与 0.1.2（`lcKema/_5OnbHa/EvIC1a`）两套选择器；v32 起 settings store 改用容错 require（新版 `@deepseek-ai/dsh-client-store` 优先，老版 `dsh-client-runtime/client` 兜底）。测试在 `test/client.test.js`，用 VM 假 DOM 运行，不需要浏览器。
+宿主侧 `lib/index.js` 是无逻辑的 cordis 入口。客户端 `lib/client.js` 是单个无构建步骤的 bundle，运行时注入三层样式（行为、颜色 token、字体），并通过 MutationObserver 驱动展开收起状态机。v31 起同时兼容 DSH 0.1.0（`QWLzlG/_Xvjua`）与 0.1.2（`lcKema/_5OnbHa/EvIC1a`）两套选择器；v32 起 settings store 改用容错 require（新版 `@deepseek-ai/dsh-client-store` 优先，老版 `dsh-client-runtime/client` 兜底）。
+
+v0.2.3 起适配 DSH 0.2.0 的插件兼容性闸门：宿主会把清单里每个 `@deepseek-ai/dsh*` peer 的**范围**拿去和 dsh 运行时版本比对（`semver.satisfies(runtime, range)`），因此 peer 从已被重构掉的 `@deepseek-ai/dsh-client-runtime` 换成 `@deepseek-ai/dsh-client-store: >=0.1.2-rc.1 <0.3.0`，`dsh.client.inject` 同步换成 `@deepseek-ai/dsh-client-store`（宿主静态模块表提供的规范名，官方客户端包一律这样 require；老主机仍由代码里的 `dsh-client-runtime/client` 兜底路径覆盖）。`react` 由宿主静态表提供、官方客户端包都不声明，本包也不再声明。测试在 `test/client.test.js`，用 VM 假 DOM 运行，不需要浏览器。
 
 ```sh
 npm test
@@ -158,7 +160,19 @@ tokens, fonts) and drives the disclosure state machine through a
 MutationObserver. Since v31 it supports both DSH 0.1.0 (`QWLzlG/_Xvjua`)
 and 0.1.2 (`lcKema/_5OnbHa/EvIC1a`) selector sets; since v32 the settings
 store require tolerates both runtimes (new `@deepseek-ai/dsh-client-store`
-first, old `dsh-client-runtime/client` as fallback). Tests in `test/client.test.js` run against a VM fake DOM.
+first, old `dsh-client-runtime/client` as fallback).
+
+Since v0.2.3 the manifest passes the DSH 0.2.0 plugin compatibility gate:
+the host compares every `@deepseek-ai/dsh*` peer **range** against the dsh
+runtime version (`semver.satisfies(runtime, range)`), so the peer moved
+from the retired `@deepseek-ai/dsh-client-runtime` to
+`@deepseek-ai/dsh-client-store: >=0.1.2-rc.1 <0.3.0`, and
+`dsh.client.inject` now names `@deepseek-ai/dsh-client-store` — the
+canonical static-table module every official client package requires. The
+in-code `dsh-client-runtime/client` fallback still covers older hosts.
+`react` comes from the host's static module table and is not declared by
+official client packages, so this package no longer declares it either.
+Tests in `test/client.test.js` run against a VM fake DOM.
 
 ```sh
 npm test
