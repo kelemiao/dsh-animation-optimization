@@ -722,6 +722,39 @@ test("collapses a 0.1.2 command disclosure (_5OnbHa) only after the next item mo
   assert.equal(clicks, 2); // then the row is toggled closed
 });
 
+test("releases the collapse tag so a missed close never leaves an invisible gap", async () => {
+  let clicks = 0;
+  // A row that ignores the synthetic click (host keeps the body mounted).
+  const row = { click() { clicks += 1; } };
+  const stateRef = { value: "running" };
+  const body = fakeElement("div");
+  body.scrollTop = 0;
+  body.scrollHeight = 700;
+  body.clientHeight = 96;
+  body.getBoundingClientRect = () => ({ height: 700 });
+  const root = makeRoot({ kind: "think3", stateRef, row });
+  const theme = loadTheme({ roots: [root] });
+  assert.equal(clicks, 1);
+
+  root.body = body;
+  theme.fire();
+  await sleep(25);
+
+  stateRef.value = "ok";
+  theme.fire();
+  root.nextElementSibling = { nodeType: 1, className: "_markdown_test", textContent: "next" };
+  theme.fire();
+  await sleep(30);
+  assert.equal(body.getAttribute("data-dsh-collapsing"), "1");
+
+  // After the out animation finishes the tag must be gone even though the
+  // body is still mounted — otherwise it would stay invisible but full-height.
+  await eventually(() => body.getAttribute("data-dsh-collapsing") === null, 2500);
+  assert.equal(body.getAttribute("data-dsh-collapsing"), null);
+  assert.equal(body.style.maxHeight, "");
+  assert.equal(body.style.overflow, "");
+});
+
 test("uses the new settings store on dsh 0.1.2 without breaking animations", async () => {
   let clicks = 0;
   const row = { click() { clicks += 1; } };

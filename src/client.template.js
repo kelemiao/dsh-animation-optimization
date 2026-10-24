@@ -1004,6 +1004,15 @@ exports.apply = function apply(ctx) {
     // One-shot animated collapse: play dsh-disclose-out, then click the row so
     // the framework removes the body. Guards prevent double-firing and avoid
     // reopening a body the framework already removed on its own.
+    var disclosureRowOf = function (root, row) {
+      // v0.2.x marks the real toggle with the stable [data-disclosure-row]
+      // attribute; older builds only expose the hash-named row class.
+      if (typeof root.querySelector === "function") {
+        var anchor = root.querySelector("[data-disclosure-row]");
+        if (anchor) return anchor;
+      }
+      return row;
+    };
     var collapseOnce = function (root, row, body, bodySelector, spec) {      if (!body || !row || pendingClicks.get(root) === "close") return;
       if (body.getAttribute && body.getAttribute("data-dsh-collapsing")) return;
       // Pin the CURRENT rendered height before anything reflows, so the out
@@ -1039,8 +1048,32 @@ exports.apply = function apply(ctx) {
         var stillThere = root.isConnected !== false && connected &&
           typeof root.querySelector === "function" &&
           root.querySelector(bodySelector) === body;
-        if (stillThere) clickOnce(root, row, "close");
-        else pendingClicks.delete(root);
+        if (!stillThere) {
+          pendingClicks.delete(root);
+          return;
+        }
+        clickOnce(root, disclosureRowOf(root, row), "close");
+        // DSH unmounts the body when the disclosure collapses. When the
+        // synthetic click is missed (or the host keeps the body mounted),
+        // the collapse tag would leave the finished block invisible while it
+        // still occupies its full height — the tall blank gap after a turn.
+        // Release the tag on the next frame so the block stays visible at
+        // worst, and retry the toggle once through the stable row anchor.
+        setTimeout(function () {
+          if (body.isConnected === false) return;
+          if (body.removeAttribute) body.removeAttribute("data-dsh-collapsing");
+          if (body.style) {
+            body.style.maxHeight = "";
+            body.style.overflow = "";
+          }
+          var anchor = disclosureRowOf(root, row);
+          if (anchor && anchor.getAttribute && root.getAttribute &&
+              root.getAttribute("data-expanded") !== null &&
+              anchor.getAttribute("data-expandable") !== null &&
+              typeof anchor.click === "function") {
+            try { anchor.click(); } catch (e) {}
+          }
+        }, 64);
       };
       var onEnd = function (event) {
         if (event && event.animationName === "dsh-disclose-out") finish();
