@@ -339,6 +339,13 @@ test("ships DSH Settings rows for logo, colors and fonts plus split CSS layers",
   assert.match(source, /animation: dsh-claude-thinking " \+ THINKING_DUR_S/);
   assert.match(source, /body\[data-dsh-streaming\] \[data-chat-running\]/);
   assert.match(source, /prefers-reduced-motion: reduce\) \{",\s*"  \[data-chat-running\]/);
+  // v0.3.4: a stale collapse tag must never keep an invisible tall block.
+  assert.match(source, /COLLAPSE_TAG_MS = 1200/);
+  assert.match(source, /sweepCollapseTags/);
+  assert.match(source, /removeAttribute\("data-dsh-collapsing"\)/);
+  assert.match(source, /__dshAnimDebug/);
+  assert.match(source, /data-dsh-anim-version/);
+  assert.match(source, /\[data-disclosure-row\]/);
   // v27: the duplicate small starburst beside the Think label is gone.
   assert.doesNotMatch(source, /\.QWLzlG_root\[data-state=running\] \.QWLzlG_leading::before/);
 });

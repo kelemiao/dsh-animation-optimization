@@ -1027,6 +1027,7 @@ exports.apply = function apply(ctx) {
         }
       }
       if (body.setAttribute) body.setAttribute("data-dsh-collapsing", "1");
+      if (typeof noteCollapseTag === "function") noteCollapseTag(body);
       stopScrollLoop(body);
       var minDelay = 380;
       var staggerEnd = staggerEnds.get(root);
@@ -1238,6 +1239,61 @@ exports.apply = function apply(ctx) {
     else if (typeof document.addEventListener === "function") {
       document.addEventListener("DOMContentLoaded", startObserver, { once: true });
     }
+    // ==== collapse watchdog ==================================================
+    // The collapse tag pins opacity 0 with fill-mode forwards. If the host
+    // ignores our close click (or re-mounts the body), a stale tag would keep
+    // a finished block invisible while it still occupies its height — the
+    // tall blank gap users see after a turn. The watchdog releases any tag
+    // older than 1.2s that is no longer animating, unconditionally.
+    var COLLAPSE_TAG_MS = 1200;
+    var collapseTaggedAt = new WeakMap();
+    var noteCollapseTag = function (body) { collapseTaggedAt.set(body, Date.now()); };
+    var releaseCollapseTag = function (body) {
+      if (!body || typeof body.removeAttribute !== "function") return;
+      body.removeAttribute("data-dsh-collapsing");
+      if (body.style) {
+        body.style.maxHeight = "";
+        body.style.overflow = "";
+      }
+    };
+    var sweepCollapseTags = function () {
+      if (typeof document.querySelectorAll !== "function") return;
+      var list = document.querySelectorAll("[data-dsh-collapsing]");
+      var now = Date.now();
+      for (var i = 0; i < list.length; i++) {
+        var el = list[i];
+        var tagged = collapseTaggedAt.get(el);
+        if (tagged === void 0) { collapseTaggedAt.set(el, now); continue; }
+        if (now - tagged < COLLAPSE_TAG_MS) continue;
+        releaseCollapseTag(el);
+        collapseTaggedAt.delete(el);
+      }
+    };
+    var watchdogTimer = null;
+    if (typeof setInterval === "function") {
+      watchdogTimer = setInterval(sweepCollapseTags, 500);
+      if (watchdogTimer && typeof watchdogTimer.unref === "function") watchdogTimer.unref();
+    }
+
+    // Verification hook: run __dshAnimDebug() in the console to confirm the
+    // loaded bundle and see any stale collapse tag.
+    if (typeof window !== "undefined") {
+      window.__dshAnimDebug = function () {
+        var stale = [];
+        var tags = document.querySelectorAll("[data-dsh-collapsing]");
+        for (var s = 0; s < tags.length; s++) stale.push(tags[s].className || "(no class)");
+        return {
+          version: "0.3.4",
+          staleCollapseTags: stale.length,
+          staleClasses: stale,
+          runningIndicators: document.querySelectorAll("[data-chat-running]").length,
+          thinkRoots: document.querySelectorAll(".VJlF5q_root, .lcKema_root, .QWLzlG_root").length,
+          toolRoots: document.querySelectorAll(".hKdVjq_root, .o3BgMG_root").length
+        };
+      };
+      try { document.body.setAttribute("data-dsh-anim-version", "0.3.4"); } catch (e) {}
+    }
+
     syncDisclosures();
     followAdvisorFlow();
     bindConversation();
@@ -1246,6 +1302,7 @@ exports.apply = function apply(ctx) {
 
     return function () {
       mo.disconnect();
+      if (watchdogTimer !== null && typeof clearInterval === "function") clearInterval(watchdogTimer);
       if (framePending) cancelFrame(frameHandle);
       if (scrollTimer !== null) {
         clearInterval(scrollTimer);
