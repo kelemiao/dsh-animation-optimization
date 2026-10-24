@@ -331,6 +331,12 @@ test("ships DSH Settings rows for logo, colors and fonts plus split CSS layers",
   assert.match(source, /\[data-chat-running\] \{/);
   assert.match(source, /\[data-chat-running\] \[class\*='_runningIcon'\]::before/);
   assert.match(source, /body\[data-dsh-logo=off\] \[data-chat-running\] \[class\*='_runningIcon'\] \{ display: none/);
+  // v34: the starburst must read as an animation, not a static glyph —
+  // keep a visible pulse plus a slow spin, and respect reduced motion.
+  assert.match(source, /@keyframes dsh-claude-morph \{[\s\S]*?scale\(1\.22\) rotate\(16deg\)/);
+  assert.match(source, /@keyframes dsh-claude-spin/);
+  assert.match(source, /\[class\*='_runningIcon'\] \{ width: 16px[^"]*animation: dsh-claude-spin/);
+  assert.match(source, /prefers-reduced-motion: reduce\) \{",\s*"  \[data-chat-running\]/);
   // v27: the duplicate small starburst beside the Think label is gone.
   assert.doesNotMatch(source, /\.QWLzlG_root\[data-state=running\] \.QWLzlG_leading::before/);
 });

@@ -52,7 +52,7 @@ Claude Logo 控制星爆头像和流式指示器。Claude 配色在编辑风格�
 
 ## 结构与测试
 
-宿主侧 `lib/index.js` 是无逻辑的 cordis 入口。客户端 `lib/client.js` 是单个无构建步骤的 bundle，运行时注入三层样式（行为、颜色 token、字体），并通过 MutationObserver 驱动展开收起状态机。v31 起同时兼容 DSH 0.1.0（`QWLzlG/_Xvjua`）与 0.1.2（`lcKema/_5OnbHa/EvIC1a`）两套选择器；v32 起 settings store 改用容错 require（新版 `@deepseek-ai/dsh-client-store` 优先，老版 `dsh-client-runtime/client` 兜底）；v33（v0.2.4）起补齐 DSH 0.2.1-rc.3 的第三套哈希（思考 `VJlF5q`、命令卡 `EqXNNG`、工具行 `hKdVjq`、会话壳 `an3WzG/V4vHZW`），底部"深度求索中"运行指示器改用无哈希的 `[data-chat-running]` 锚点适配——鲸鱼图标换成 Claude 星爆、蓝色 shimmer 恢复中性色，并随 Claude Logo 开关联动；同一构建在桌面版与网页版都生效，旧版 DSH 的选择器全部保留。
+宿主侧 `lib/index.js` 是无逻辑的 cordis 入口。客户端 `lib/client.js` 是单个无构建步骤的 bundle，运行时注入三层样式（行为、颜色 token、字体），并通过 MutationObserver 驱动展开收起状态机。v31 起同时兼容 DSH 0.1.0（`QWLzlG/_Xvjua`）与 0.1.2（`lcKema/_5OnbHa/EvIC1a`）两套选择器；v32 起 settings store 改用容错 require（新版 `@deepseek-ai/dsh-client-store` 优先，老版 `dsh-client-runtime/client` 兜底）；v33（v0.2.4）起补齐 DSH 0.2.1-rc.3 的第三套哈希（思考 `VJlF5q`、命令卡 `EqXNNG`、工具行 `hKdVjq`、会话壳 `an3WzG/V4vHZW`），底部"深度求索中"运行指示器改用无哈希的 `[data-chat-running]` 锚点适配——鲸鱼图标换成 Claude 星爆、蓝色 shimmer 恢复中性色，并随 Claude Logo 开关联动；v34（v0.2.5）把星爆动画加强到肉眼可见（±16° 摆动、0.84–1.22 呼吸、8s 慢速自转），并在 `prefers-reduced-motion` 下自动停用。同一构建在桌面版与网页版都生效，旧版 DSH 的选择器全部保留。
 
 v0.2.3 起适配 DSH 0.2.0 的插件兼容性闸门：宿主会把清单里每个 `@deepseek-ai/dsh*` peer 的**范围**拿去和 dsh 运行时版本比对（`semver.satisfies(runtime, range)`），因此 peer 从已被重构掉的 `@deepseek-ai/dsh-client-runtime` 换成 `@deepseek-ai/dsh-client-store: >=0.1.2-rc.1 <0.3.0`，`dsh.client.inject` 同步换成 `@deepseek-ai/dsh-client-store`（宿主静态模块表提供的规范名，官方客户端包一律这样 require；老主机仍由代码里的 `dsh-client-runtime/client` 兜底路径覆盖）。`react` 由宿主静态表提供、官方客户端包都不声明，本包也不再声明。测试在 `test/client.test.js`，用 VM 假 DOM 运行，不需要浏览器。
 
@@ -166,8 +166,10 @@ command `EqXNNG`, tool row `hKdVjq`, chat shell `an3WzG/V4vHZW`) and restyles
 the bottom "Deep diving" running indicator through hash-free
 `[data-chat-running]` anchors — the whale becomes the Claude starburst, the
 blue shimmer returns to neutral ink, and the swap follows the Claude Logo
-switch. One build serves both the Desktop and web profiles; every older
-selector stays for backward compatibility.
+switch. Since v34 (v0.2.5) the starburst pulse is wide enough to read at a
+glance (±16° swing, 0.84–1.22 breathing, 8s slow self-rotation) and stops
+under `prefers-reduced-motion`. One build serves both the Desktop and web
+profiles; every older selector stays for backward compatibility.
 
 Since v0.2.3 the manifest passes the DSH 0.2.0 plugin compatibility gate:
 the host compares every `@deepseek-ai/dsh*` peer **range** against the dsh
