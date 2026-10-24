@@ -705,6 +705,11 @@ exports.apply = function apply(ctx) {
         scroll: ".hKdVjq_readBody [class*='_line_'], .hKdVjq_diffBody [class*='_line_'], .hKdVjq_terminalBody [class*='_line_']", tool: true }
     ];
     var lastStates = new WeakMap();
+    // Turns end by replacing the running indicator with a "worked for …"
+    // summary that is neither a disclosure root nor answer markdown, so
+    // hasNextItem can never see it. Remember that a turn was running so the
+    // transition to idle can release the blocks still waiting for a successor.
+    var sawTurnRunning = false;
     var pendingClicks = new WeakMap();
     var pendingCollapse = new Map();
 
@@ -1053,28 +1058,34 @@ exports.apply = function apply(ctx) {
           pendingClicks.delete(root);
           return;
         }
-        clickOnce(root, disclosureRowOf(root, row), "close");
-        // DSH unmounts the body when the disclosure collapses. When the
-        // synthetic click is missed (or the host keeps the body mounted),
-        // the collapse tag would leave the finished block invisible while it
-        // still occupies its full height — the tall blank gap after a turn.
-        // Release the tag on the next frame so the block stays visible at
-        // worst, and retry the toggle once through the stable row anchor.
-        setTimeout(function () {
-          if (body.isConnected === false) return;
-          if (body.removeAttribute) body.removeAttribute("data-dsh-collapsing");
-          if (body.style) {
-            body.style.maxHeight = "";
-            body.style.overflow = "";
-          }
+        // DSH unmounts the body when the disclosure collapses. The synthetic
+        // click is occasionally swallowed (the row re-rendered in the same
+        // frame), so the close is retried a few times while the root still
+        // reports an expanded state. Each attempt re-reads the live DOM.
+        var attempts = 0;
+        var tryClose = function () {
+          attempts += 1;
+          if (!root || root.isConnected === false) return;
+          if (typeof root.querySelector === "function" &&
+              root.querySelector(bodySelector) !== body) return; // collapsed
           var anchor = disclosureRowOf(root, row);
-          if (anchor && anchor.getAttribute && root.getAttribute &&
-              root.getAttribute("data-expanded") !== null &&
-              anchor.getAttribute("data-expandable") !== null &&
-              typeof anchor.click === "function") {
+          if (anchor && typeof anchor.click === "function") {
             try { anchor.click(); } catch (e) {}
           }
+          // Only keep retrying while the host still reports the disclosure as
+          // expanded; hosts that expose nothing keep the single-click path.
+          var expanded = root.getAttribute && root.getAttribute("data-expanded");
+          if (expanded === null || expanded === void 0) return;
+          if (attempts >= 3) { releaseCollapseTag(body); return; }
+          setTimeout(tryClose, 150);
+        };
+        // Release the collapse tag on the next frame so a missed close leaves
+        // a visible block instead of an invisible full-height gap.
+        setTimeout(function () {
+          if (body.isConnected === false) return;
+          releaseCollapseTag(body);
         }, 64);
+        tryClose();
       };
       var onEnd = function (event) {
         if (event && event.animationName === "dsh-disclose-out") finish();
@@ -1170,6 +1181,10 @@ exports.apply = function apply(ctx) {
       // The document-order list is built once per sync and shared by every
       // pending root instead of being re-queried for each one; when nothing
       // is waiting to collapse, the query is skipped entirely.
+      var turnRunningNow = typeof document.querySelector === "function" &&
+        document.querySelector("[data-chat-running]") !== null;
+      if (turnRunningNow) sawTurnRunning = true;
+      var turnWentIdle = sawTurnRunning && !turnRunningNow;
       var pendingItems = pendingCollapse.size > 0 ? flowItems() : null;
       pendingCollapse.forEach(function (entry, root) {
         var pendingBody = root.querySelector(entry.bodySelector);
@@ -1177,7 +1192,7 @@ exports.apply = function apply(ctx) {
           pendingCollapse.delete(root);
           return;
         }
-        if (hasNextItem(root, pendingItems)) {
+        if (hasNextItem(root, pendingItems) || turnWentIdle) {
           pendingCollapse.delete(root);
           collapseOnce(root, entry.row, pendingBody, entry.bodySelector, entry.spec);
         }
@@ -1283,7 +1298,7 @@ exports.apply = function apply(ctx) {
         var tags = document.querySelectorAll("[data-dsh-collapsing]");
         for (var s = 0; s < tags.length; s++) stale.push(tags[s].className || "(no class)");
         return {
-          version: "0.3.4",
+          version: "0.3.5",
           staleCollapseTags: stale.length,
           staleClasses: stale,
           runningIndicators: document.querySelectorAll("[data-chat-running]").length,
@@ -1291,7 +1306,7 @@ exports.apply = function apply(ctx) {
           toolRoots: document.querySelectorAll(".hKdVjq_root, .o3BgMG_root").length
         };
       };
-      try { document.body.setAttribute("data-dsh-anim-version", "0.3.4"); } catch (e) {}
+      try { document.body.setAttribute("data-dsh-anim-version", "0.3.5"); } catch (e) {}
     }
 
     syncDisclosures();

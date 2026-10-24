@@ -1,6 +1,6 @@
 {
   "name": "dsh-animation-optimization",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "description": "DSH 动画优化：输出流式动画、Claude Desktop App 风格外观、单动态 Logo 与全局 UI emoji 过滤",
   "publishConfig": {
     "access": "public"

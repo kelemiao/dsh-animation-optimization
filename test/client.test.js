@@ -63,7 +63,7 @@ function fakeElement(tag, className = "") {
   };
 }
 
-function loadTheme({ roots = [], tabs = [], flow = null, flows = [], conversation = [], runtime = "old" } = {}) {
+function loadTheme({ roots = [], tabs = [], flow = null, flows = [], conversation = [], runtime = "old", running = null } = {}) {
   let observer;
   let observerOptions;
   let queryCount = 0;
@@ -88,7 +88,8 @@ function loadTheme({ roots = [], tabs = [], flow = null, flows = [], conversatio
       return { nextNode() { return null; } };
     },
     querySelector(selector) {
-      return selector === "style[data-dsh-animation-optimization]" ? null : null;
+      if (selector === "[data-chat-running]") return running && running.value ? {} : null;
+      return null;
     },
     querySelectorAll(selector) {
       queryCount += 1;
@@ -177,12 +178,13 @@ function loadTheme({ roots = [], tabs = [], flow = null, flows = [], conversatio
   };
 }
 
-function makeRoot({ kind = "think", state = "ok", stateRef = null, body = null, row = null } = {}) {
+function makeRoot({ kind = "think", state = "ok", stateRef = null, body = null, row = null, anchor = null, expandedRef = null } = {}) {
   const root = {
     kind,
     body,
     getAttribute(name) {
-      return name === "data-state" ? (stateRef ? stateRef.value : state) : null;
+      return name === "data-expanded" ? (expandedRef ? expandedRef.value : null)
+        : name === "data-state" ? (stateRef ? stateRef.value : state) : null;
     },
     querySelector(selector) {
       const rowSelector = kind === "file" || kind === "file3" ? (kind === "file" ? ".o3BgMG_row" : ".hKdVjq_row")
@@ -191,6 +193,7 @@ function makeRoot({ kind = "think", state = "ok", stateRef = null, body = null, 
       const bodySelector = kind === "file" || kind === "file3" ? (kind === "file" ? ".o3BgMG_bodyWrap" : ".hKdVjq_bodyWrap")
         : kind === "xvjua" ? "._Xvjua_body" : kind === "cmd2" ? "._5OnbHa_body" : kind === "cmd3" ? ".EqXNNG_body"
         : kind === "think2" ? ".lcKema_thinkBody" : kind === "think3" ? ".VJlF5q_thinkBody" : ".QWLzlG_thinkBody";
+      if (selector === "[data-disclosure-row]") return anchor || row;
       if (selector === rowSelector) return row;
       if (selector === bodySelector) return root.body;
       if (kind === "file3" && selector === ".o3BgMG_bodyWrap, .hKdVjq_bodyWrap") return root.body;
@@ -762,6 +765,61 @@ test("releases the collapse tag so a missed close never leaves an invisible gap"
   assert.equal(body.style.overflow, "");
 });
 
+test("collapses the last block when the turn ends without a successor", async () => {
+  let clicks = 0;
+  const row = { click() { clicks += 1; } };
+  const stateRef = { value: "running" };
+  const runningRef = { value: true };
+  const body = fakeElement("div");
+  body.scrollTop = 0;
+  body.scrollHeight = 400;
+  body.clientHeight = 96;
+  const root = makeRoot({ kind: "think3", stateRef, row });
+  const theme = loadTheme({ roots: [root], running: runningRef });
+  assert.equal(clicks, 1); // auto-open while running
+
+  root.body = body;
+  theme.fire();
+  await sleep(25);
+
+  // The turn finishes: its "worked for …" summary is neither a disclosure
+  // root nor answer markdown, so no successor is ever detected.
+  stateRef.value = "ok";
+  runningRef.value = false;
+  theme.fire();
+  await sleep(40);
+  assert.equal(body.getAttribute("data-dsh-collapsing"), "1");
+  await eventually(() => clicks === 2, 2500);
+  assert.equal(clicks, 2);
+});
+
+test("retries the close when the host swallows the synthetic click", async () => {
+  let opens = 0;
+  let closes = 0;
+  const stateRef = { value: "running" };
+  const expandedRef = { value: "true" };
+  const row = { getAttribute: () => "", click() { opens += 1; } };
+  const anchor = {
+    getAttribute: () => "",
+    click() {
+      closes += 1;
+      if (closes >= 2) expandedRef.value = null; // host accepts the 2nd click
+    },
+  };
+  const body = fakeElement("div");
+  const root = makeRoot({ kind: "think3", stateRef, row, anchor, expandedRef });
+  const theme = loadTheme({ roots: [root] });
+  assert.equal(opens, 1);
+
+  root.body = body;
+  theme.fire();
+  await sleep(25);
+  stateRef.value = "ok";
+  root.nextElementSibling = { nodeType: 1, className: "_markdown_test", textContent: "next" };
+  theme.fire();
+  await eventually(() => closes >= 2, 2500);
+  assert.equal(closes, 2);
+});
 test("uses the new settings store on dsh 0.1.2 without breaking animations", async () => {
   let clicks = 0;
   const row = { click() { clicks += 1; } };
