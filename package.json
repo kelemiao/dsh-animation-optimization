@@ -1,7 +1,7 @@
 {
   "name": "dsh-animation-optimization",
-  "version": "0.2.5",
-  "description": "DSH 动画优化：输出流式动画与 Claude Code 风格外观插件",
+  "version": "0.3.3",
+  "description": "DSH 动画优化：输出流式动画、Claude Desktop App 风格外观、单动态 Logo 与全局 UI emoji 过滤",
   "publishConfig": {
     "access": "public"
   },
@@ -34,6 +34,7 @@
   },
   "license": "MIT",
   "scripts": {
+    "build": "node scripts/build-client.mjs",
     "test": "node --test test/client.test.js"
   },
   "peerDependencies": {
@@ -45,9 +46,7 @@
       "patch": "./cordis.patch.yml"
     },
     "client": {
-      "inject": [
-        "@deepseek-ai/dsh-client-store"
-      ],
+      "inject": ["@deepseek-ai/dsh-client-store"],
       "platform": "web",
       "immediately": true
     }

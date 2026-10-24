@@ -331,11 +331,13 @@ test("ships DSH Settings rows for logo, colors and fonts plus split CSS layers",
   assert.match(source, /\[data-chat-running\] \{/);
   assert.match(source, /\[data-chat-running\] \[class\*='_runningIcon'\]::before/);
   assert.match(source, /body\[data-dsh-logo=off\] \[data-chat-running\] \[class\*='_runningIcon'\] \{ display: none/);
-  // v34: the starburst must read as an animation, not a static glyph —
-  // keep a visible pulse plus a slow spin, and respect reduced motion.
-  assert.match(source, /@keyframes dsh-claude-morph \{[\s\S]*?scale\(1\.22\) rotate\(16deg\)/);
-  assert.match(source, /@keyframes dsh-claude-spin/);
-  assert.match(source, /\[class\*='_runningIcon'\] \{ width: 16px[^"]*animation: dsh-claude-spin/);
+  // v34: the running logo must animate — official lottie frame sequences
+  // (thinking 8f/1.143s while reasoning, typing 12f/0.857s while text
+  // streams), applied to both the legacy turn status and data-chat-running.
+  assert.match(source, /@keyframes dsh-claude-thinking/);
+  assert.match(source, /@keyframes dsh-claude-typing/);
+  assert.match(source, /animation: dsh-claude-thinking " \+ THINKING_DUR_S/);
+  assert.match(source, /body\[data-dsh-streaming\] \[data-chat-running\]/);
   assert.match(source, /prefers-reduced-motion: reduce\) \{",\s*"  \[data-chat-running\]/);
   // v27: the duplicate small starburst beside the Think label is gone.
   assert.doesNotMatch(source, /\.QWLzlG_root\[data-state=running\] \.QWLzlG_leading::before/);
@@ -420,14 +422,15 @@ test("collapses as soon as the next disclosure row EXISTS, even a collapsed ok r
 test("observes data-state attribute changes so state-only transitions sync", () => {
   const theme = loadTheme();
   assert.equal(theme.observerOptions.attributes, true);
-  assert.equal(theme.observerOptions.attributeFilter.join(","), "data-state");
+  // v33: the global emoji filter also watches placeholder/title edits.
+  assert.deepEqual([...theme.observerOptions.attributeFilter].sort(), ["data-state", "placeholder", "title"]);
 });
 
 test("coalesces a burst of DOM mutations into one page synchronization", async () => {
   const theme = loadTheme();
   for (let index = 0; index < 100; index += 1) theme.fire();
   await sleep(25);
-  assert.equal(theme.queryCount, 11); // v33: 8 disclosure entries + advisor + conversation + tabs
+  assert.equal(theme.queryCount, 10); // 8 disclosure entries + advisor + conversation
 });
 
 test("does not click the same unsettled disclosure more than once", async () => {
@@ -442,16 +445,27 @@ test("does not click the same unsettled disclosure more than once", async () => 
   assert.equal(clicks, 1);
 });
 
-test("strips the red dot only from the Memory Evolve settings tab and never rewrites unchanged text", async () => {
-  const settingsNode = textNode("🔴 Memory Evolve 设置");
-  const memoryNode = textNode("🔴 记忆 (3)");
-  const tabs = [
-    { __textNodes: [settingsNode], textContent: "🔴 Memory Evolve 设置" },
-    { __textNodes: [memoryNode], textContent: "🔴 记忆 (3)" },
-  ];
-  loadTheme({ tabs });
-  assert.equal(settingsNode.nodeValue, "Memory Evolve 设置");
-  assert.equal(memoryNode.nodeValue, "🔴 记忆 (3)");
+test("strips UI emoji but never touches code blocks or the conversation output", async () => {
+  const theme = loadTheme();
+
+  // Chrome text: emoji removed on the changed node only.
+  const chromeNode = textNode("🔴 记忆 (3)");
+  theme.fire([{ type: "characterData", target: chromeNode }]);
+  assert.equal(chromeNode.nodeValue, "记忆 (3)");
+
+  // Code content is excluded by tag.
+  const codeNode = textNode("const x = '🔴';");
+  const code = fakeElement("PRE");
+  codeNode.parentElement = code;
+  theme.fire([{ type: "characterData", target: codeNode }]);
+  assert.equal(codeNode.nodeValue, "const x = '🔴';");
+
+  // The conversation scroller is excluded by class (0.2.x hash included).
+  const outputNode = textNode("hello 🔴 world");
+  const scrollerEl = fakeElement("div", "an3WzG_scrollBody");
+  outputNode.parentElement = scrollerEl;
+  theme.fire([{ type: "characterData", target: outputNode }]);
+  assert.equal(outputNode.nodeValue, "hello 🔴 world");
 });
 
 test("does not auto-close a manually opened completed disclosure", async () => {
