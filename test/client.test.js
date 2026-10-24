@@ -93,16 +93,19 @@ function loadTheme({ roots = [], tabs = [], flow = null, flows = [], conversatio
     querySelectorAll(selector) {
       queryCount += 1;
       if (selector === ".advisor-flow") return flows.slice();
-      if (selector === ".wSkVaW_scrollBody") return conversation.slice();
-      if (selector === ".QWLzlG_root, .lcKema_root, ._Xvjua_root, ._5OnbHa_root, .o3BgMG_root, [class*='_markdown_']") {
+      if (selector === ".wSkVaW_scrollBody, .an3WzG_scrollBody") return conversation.slice();
+      if (selector === ".QWLzlG_root, .lcKema_root, .VJlF5q_root, ._Xvjua_root, ._5OnbHa_root, .EqXNNG_root, .o3BgMG_root, .hKdVjq_root, [class*='_markdown_']") {
         return flow ? flow.slice() : roots.slice();
       }
       if (selector === ".QWLzlG_root") return roots.filter((root) => root.kind === "think");
       if (selector === ".lcKema_root") return roots.filter((root) => root.kind === "think2");
+      if (selector === ".VJlF5q_root") return roots.filter((root) => root.kind === "think3");
       if (selector === "._Xvjua_root") return roots.filter((root) => root.kind === "xvjua");
       if (selector === "._5OnbHa_root") return roots.filter((root) => root.kind === "cmd2");
+      if (selector === ".EqXNNG_root") return roots.filter((root) => root.kind === "cmd3");
       if (selector === ".o3BgMG_root") return roots.filter((root) => root.kind === "file");
-      if (selector === ".wSkVaW_tab") return tabs;
+      if (selector === ".hKdVjq_root") return roots.filter((root) => root.kind === "file3");
+      if (selector === ".wSkVaW_tab, .an3WzG_tab") return tabs;
       return [];
     },
   };
@@ -182,16 +185,24 @@ function makeRoot({ kind = "think", state = "ok", stateRef = null, body = null, 
       return name === "data-state" ? (stateRef ? stateRef.value : state) : null;
     },
     querySelector(selector) {
-      const rowSelector = kind === "file" ? ".o3BgMG_row" : kind === "xvjua" ? "._Xvjua_row" : kind === "cmd2" ? "._5OnbHa_row" : kind === "think2" ? ".lcKema_row" : ".QWLzlG_row";
-      const bodySelector = kind === "file" ? ".o3BgMG_bodyWrap" : kind === "xvjua" ? "._Xvjua_body" : kind === "cmd2" ? "._5OnbHa_body" : kind === "think2" ? ".lcKema_thinkBody" : ".QWLzlG_thinkBody";
+      const rowSelector = kind === "file" || kind === "file3" ? (kind === "file" ? ".o3BgMG_row" : ".hKdVjq_row")
+        : kind === "xvjua" ? "._Xvjua_row" : kind === "cmd2" ? "._5OnbHa_row" : kind === "cmd3" ? ".EqXNNG_row"
+        : kind === "think2" ? ".lcKema_row" : kind === "think3" ? ".VJlF5q_row" : ".QWLzlG_row";
+      const bodySelector = kind === "file" || kind === "file3" ? (kind === "file" ? ".o3BgMG_bodyWrap" : ".hKdVjq_bodyWrap")
+        : kind === "xvjua" ? "._Xvjua_body" : kind === "cmd2" ? "._5OnbHa_body" : kind === "cmd3" ? ".EqXNNG_body"
+        : kind === "think2" ? ".lcKema_thinkBody" : kind === "think3" ? ".VJlF5q_thinkBody" : ".QWLzlG_thinkBody";
       if (selector === rowSelector) return row;
       if (selector === bodySelector) return root.body;
+      if (kind === "file3" && selector === ".o3BgMG_bodyWrap, .hKdVjq_bodyWrap") return root.body;
       return null;
     },
     querySelectorAll(selector) {
       const scrollSelector = kind === "file"
         ? ".o3BgMG_readBody ._body_biesw_72, .o3BgMG_diffBody ._body_srovd_36"
-        : kind === "xvjua" ? "._Xvjua_body" : kind === "cmd2" ? "._5OnbHa_body" : kind === "think2" ? ".lcKema_thinkBody" : ".QWLzlG_thinkBody";
+        : kind === "file3"
+        ? ".hKdVjq_readBody [class*='_line_'], .hKdVjq_diffBody [class*='_line_'], .hKdVjq_terminalBody [class*='_line_']"
+        : kind === "xvjua" ? "._Xvjua_body" : kind === "cmd2" ? "._5OnbHa_body" : kind === "cmd3" ? ".EqXNNG_body"
+        : kind === "think2" ? ".lcKema_thinkBody" : kind === "think3" ? ".VJlF5q_thinkBody" : ".QWLzlG_thinkBody";
       if (root.body && selector === scrollSelector) return [root.body];
       return [];
     },
@@ -306,6 +317,20 @@ test("ships DSH Settings rows for logo, colors and fonts plus split CSS layers",
   assert.match(source, /\.EvIC1a_turnStatus \{/);
   assert.match(source, /\.EvIC1a_turnStatus::before/);
   assert.match(source, /\.EvIC1a_column/);
+  // v33: dsh 0.2.1-rc.3 renamed every CSS-module hash again; the third
+  // selector set must exist alongside the two older ones.
+  assert.match(source, /\.VJlF5q_root\[data-state=running\] \.VJlF5q_thinkBody/);
+  assert.match(source, /\.EqXNNG_root\[data-state=running\] \.EqXNNG_body/);
+  assert.match(source, /\.hKdVjq_bodyWrap\[data-dsh-running\]/);
+  assert.match(source, /\.V4vHZW_column/);
+  assert.match(source, /\.an3WzG_scrollBody/);
+  assert.match(source, /\.LOmM4q_bubble/);
+  assert.match(source, /\.GRgSLq_primary/);
+  assert.match(source, /\.an3WzG_crumbCurrent/);
+  // v33: the 0.2.x running indicator is restyled through hash-free anchors.
+  assert.match(source, /\[data-chat-running\] \{/);
+  assert.match(source, /\[data-chat-running\] \[class\*='_runningIcon'\]::before/);
+  assert.match(source, /body\[data-dsh-logo=off\] \[data-chat-running\] \[class\*='_runningIcon'\] \{ display: none/);
   // v27: the duplicate small starburst beside the Think label is gone.
   assert.doesNotMatch(source, /\.QWLzlG_root\[data-state=running\] \.QWLzlG_leading::before/);
 });
@@ -396,7 +421,7 @@ test("coalesces a burst of DOM mutations into one page synchronization", async (
   const theme = loadTheme();
   for (let index = 0; index < 100; index += 1) theme.fire();
   await sleep(25);
-  assert.equal(theme.queryCount, 8); // v31: 5 disclosure entries + advisor + conversation + tabs
+  assert.equal(theme.queryCount, 11); // v33: 8 disclosure entries + advisor + conversation + tabs
 });
 
 test("does not click the same unsettled disclosure more than once", async () => {
@@ -686,6 +711,68 @@ test("uses the new settings store on dsh 0.1.2 without breaking animations", asy
   theme.fire();
   await sleep(25);
   assert.equal(clicks, 1);
+});
+
+test("drives the dsh 0.2.1 think block (VJlF5q) through the same disclosure state machine", async () => {
+  let clicks = 0;
+  const row = { click() { clicks += 1; } };
+  const stateRef = { value: "running" };
+  const body = fakeElement("div");
+  body.scrollTop = 0;
+  body.scrollHeight = 500;
+  body.clientHeight = 96;
+  const root = makeRoot({ kind: "think3", stateRef, row });
+  const theme = loadTheme({ roots: [root] });
+  assert.equal(clicks, 1); // auto-open while running
+
+  root.body = body;
+  theme.fire();
+  await sleep(25);
+  assert.equal(body.getAttribute("data-dsh-running"), "1"); // clamp active
+
+  stateRef.value = "ok";
+  theme.fire();
+  await sleep(50);
+  assert.equal(body.getAttribute("data-dsh-collapsing"), null); // deferred
+
+  root.nextElementSibling = { nodeType: 1, className: "V4vHZW_flowItem", getAttribute: () => "ok", textContent: "" };
+  theme.fire();
+  await sleep(30);
+  assert.equal(body.getAttribute("data-dsh-collapsing"), "1");
+  await eventually(() => clicks === 2, 2500);
+  assert.equal(clicks, 2);
+});
+
+test("streams the dsh 0.2.1 tool row (hKdVjq) lines and defers its collapse", async () => {
+  let clicks = 0;
+  const row = { click() { clicks += 1; } };
+  const stateRef = { value: "running" };
+  const wrap = fakeElement("div", "hKdVjq_bodyWrap");
+  const terminalLine = fakeElement("div", "_line_8z71b_179");
+  wrap.appendChild(terminalLine);
+  wrap.scrollTop = 0;
+  wrap.scrollHeight = 300;
+  wrap.clientHeight = 96;
+  const root = makeRoot({ kind: "file3", stateRef, row });
+  const theme = loadTheme({ roots: [root] });
+  assert.equal(clicks, 1); // auto-open
+  root.body = wrap;
+  theme.fire();
+  await sleep(25);
+  // The terminal line received the staggered reveal animation.
+  assert.match(String(terminalLine.style.animation || ""), /dsh-line-in/);
+
+  stateRef.value = "ok";
+  theme.fire();
+  await sleep(50);
+  assert.equal(wrap.getAttribute("data-dsh-collapsing"), null); // waits for next item
+
+  root.nextElementSibling = { nodeType: 1, className: "hKdVjq_root", getAttribute: () => "ok", textContent: "" };
+  theme.fire();
+  await sleep(30);
+  assert.equal(wrap.getAttribute("data-dsh-collapsing"), "1");
+  await eventually(() => clicks === 2, 2500);
+  assert.equal(clicks, 2);
 });
 
 test("runs store-less when neither runtime module exists", async () => {
