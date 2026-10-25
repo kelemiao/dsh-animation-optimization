@@ -35,20 +35,26 @@
   "license": "MIT",
   "scripts": {
     "build": "node scripts/build-client.mjs",
-    "test": "node --test test/client.test.js"
+    "test": "node --test test/client.test.js",
+    "verify:dom": "node scripts/verify-dom.mjs"
   },
   "peerDependencies": {
-    "@deepseek-ai/dsh-client-store": ">=0.1.2-rc.1 <0.3.0",
-    "@deepseek-ai/cordis": "^4.0.1"
+    "@deepseek-ai/cordis": "^4.0.1",
+    "@deepseek-ai/dsh-client-store": ">=0.1.2-rc.1 <0.3.0"
   },
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
     },
     "client": {
-      "inject": ["@deepseek-ai/dsh-client-store"],
+      "inject": [
+        "@deepseek-ai/dsh-client-store"
+      ],
       "platform": "web",
       "immediately": true
     }
+  },
+  "devDependencies": {
+    "jsdom": "^29.1.1"
   }
 }
